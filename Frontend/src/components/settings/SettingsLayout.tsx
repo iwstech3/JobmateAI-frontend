@@ -22,7 +22,19 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({ activeSection, o
         <div className="space-y-6">
             {/* Horizontal Tab Navigation */}
             <div className="bg-white dark:bg-neutral-900 rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
-                <nav className="flex overflow-x-auto scrollbar-hide">
+                <nav
+                    className="flex overflow-x-auto"
+                    style={{
+                        scrollbarWidth: 'none',
+                        msOverflowStyle: 'none',
+                        WebkitOverflowScrolling: 'touch'
+                    }}
+                >
+                    <style jsx>{`
+                        nav::-webkit-scrollbar {
+                            display: none;
+                        }
+                    `}</style>
                     {settingsSections.map((section) => {
                         const Icon = section.icon;
                         const isActive = activeSection === section.id;
@@ -31,8 +43,8 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({ activeSection, o
                                 key={section.id}
                                 onClick={() => onSectionChange(section.id)}
                                 className={`flex items-center gap-2 px-6 py-4 text-sm font-medium whitespace-nowrap transition-colors border-b-2 ${isActive
-                                        ? 'border-blue-600 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-500/5'
-                                        : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
+                                    ? 'border-blue-600 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-500/5'
+                                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
                                     }`}
                             >
                                 <Icon className={`w-4 h-4 ${isActive ? 'text-blue-600 dark:text-blue-400' : ''}`} />
