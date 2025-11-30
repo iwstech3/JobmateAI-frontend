@@ -1,0 +1,181 @@
+name: Deploy Frontend to Vercel
+
+# ============================================================================
+# WHAT IS THIS FILE?
+# ============================================================================
+# This is a GitHub Actions workflow file. It defines automated steps that
+# run when code is pushed to the repository.
+#
+# WHAT DOES IT DO?
+# - Detects when code is pushed to the 'main' branch
+# - Sets up Node.js environment
+# - Installs dependencies
+# - Builds the Next.js application
+# - Runs tests (when available)
+# - Triggers Vercel to redeploy the frontend
+#
+# WHY DO WE NEED IT?
+# - Automates deployment (no manual steps)
+# - Ensures app builds successfully before deploying
+# - Provides visibility into deployment process
+# ============================================================================
+
+# ============================================================================
+# WHEN DOES THIS WORKFLOW RUN?
+# ============================================================================
+on:
+  # Trigger on push to main branch
+  push:
+    branches:
+      - main  # Only run on main branch (production)
+    paths:
+      # Only run if files in Frontend folder change
+      # (Don't redeploy if only docs change)
+      - 'Frontend/**'
+      # Or if this workflow file itself changes
+      - '.github/workflows/deploy-frontend.yml'
+  
+  # Allow manual triggering from GitHub UI
+  # (Go to Actions tab → Click workflow → "Run workflow")
+  workflow_dispatch:
+
+# ============================================================================
+# WHAT JOBS DOES THIS WORKFLOW RUN?
+# ============================================================================
+jobs:
+  # Job name: "deploy"
+  # This job handles the deployment process
+  deploy:
+    # Display name in GitHub UI
+    name: Deploy to Vercel
+    
+    # Virtual machine to run on
+    # Ubuntu = Linux operating system (free, reliable)
+    runs-on: ubuntu-latest
+    
+    # ========================================================================
+    # STEPS TO EXECUTE (in order)
+    # ========================================================================
+    steps:
+      # --------------------------------------------------------------------
+      # Step 1: Download code from GitHub
+      # --------------------------------------------------------------------
+      - name: Checkout code
+        # Uses official GitHub action to download repository code
+        # @v4 = Version 4 (specific version for reliability)
+        uses: actions/checkout@v4
+        # What this does: Downloads your code to the virtual machine
+        # Why needed: Virtual machine starts empty, needs your code
+      
+      # --------------------------------------------------------------------
+      # Step 2: Install Node.js
+      # --------------------------------------------------------------------
+      - name: Set up Node.js
+        # Uses official GitHub action to install Node.js
+        uses: actions/setup-node@v4
+        with:
+          # Node.js version to install
+          # 20 = Latest LTS (Long Term Support) version
+          node-version: '20'
+          
+          # Cache npm packages for faster builds
+          # What is caching? Store packages so we don't re-download every time
+          # Why? Speeds up workflow (saves time and bandwidth)
+          cache: 'npm'
+          
+          # Where to find the package-lock.json file
+          # Why? GitHub needs to know where dependencies are listed
+          cache-dependency-path: Frontend/package-lock.json
+        # What this does: Installs Node.js 20 and sets up npm caching
+        # Why needed: Our frontend is written in TypeScript/Next.js (needs Node.js)
+      
+      # --------------------------------------------------------------------
+      # Step 3: Install dependencies
+      # --------------------------------------------------------------------
+      - name: Install dependencies
+        # Change to Frontend folder first
+        # Why: Our package.json is in Frontend folder, not root
+        working-directory: ./Frontend
+        run: npm ci
+        # What this does: Installs all npm packages from package-lock.json
+        # Why "ci" not "install"?
+        #   - "ci" = Clean Install (faster, more reliable)
+        #   - "ci" installs exact versions from package-lock.json
+        #   - "ci" is better for CI/CD environments
+        # Why needed: Frontend can't build without these packages
+      
+      # --------------------------------------------------------------------
+      # Step 4: Build the Next.js application
+      # --------------------------------------------------------------------
+      - name: Build project
+        working-directory: ./Frontend
+        run: npm run build
+        # What this does: Builds the Next.js app for production
+        # Breaking it down:
+        #   - Compiles TypeScript to JavaScript
+        #   - Bundles all code together
+        #   - Optimizes for production (minifies, tree-shakes)
+        #   - Creates .next folder with built application
+        env:
+          # Environment variable for the build process
+          # NEXT_PUBLIC_API_URL = Backend API URL
+          # ${{ secrets.XXX }} = Uses GitHub secret if set
+          # || 'http://localhost:8000' = Fallback if secret not set
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'http://localhost:8000' }}
+        # Why needed: Build process might need this variable
+        # Note: This is for build-time. Runtime uses Vercel's env vars
+      
+      # --------------------------------------------------------------------
+      # Step 5: Run tests (placeholder for future)
+      # --------------------------------------------------------------------
+      - name: Run tests (if available)
+        working-directory: ./Frontend
+        run: |
+          # Currently commented out because we don't have tests yet
+          # When tests are added, uncomment this line:
+          # npm test || true
+          
+          # For now, just print a message
+          echo "Tests will be added later"
+        # continue-on-error: true means workflow won't fail if this step fails
+        # Why: Tests are optional for now (will be required later)
+        continue-on-error: true
+      
+      # --------------------------------------------------------------------
+      # Step 6: Notify that deployment is triggered
+      # --------------------------------------------------------------------
+      - name: Notify deployment
+        run: |
+          # Print messages to workflow logs
+          # These show up in GitHub Actions tab
+          echo "✅ Frontend deployment triggered!"
+          echo "Vercel will automatically redeploy from GitHub"
+          echo "Check Vercel dashboard for deployment status"
+        # What this does: Provides visibility in workflow logs
+        # Why: Helps you see what's happening
+      
+      # --------------------------------------------------------------------
+      # Step 7: Show deployment status
+      # --------------------------------------------------------------------
+      - name: Deployment Status
+        run: |
+          echo "🚀 Frontend is being deployed to Vercel"
+          echo "📊 Check deployment status at: https://vercel.com/dashboard"
+        # What this does: Reminds you where to check deployment
+        # Why: Helpful reference in logs
+
+# ============================================================================
+# HOW DOES DEPLOYMENT ACTUALLY HAPPEN?
+# ============================================================================
+# Important: This workflow doesn't directly deploy to Vercel.
+# Instead:
+# 1. This workflow verifies code builds successfully
+# 2. Vercel has a webhook that listens for GitHub pushes
+# 3. When you push to main, Vercel's webhook is triggered
+# 4. Vercel automatically redeploys your site
+#
+# This workflow adds:
+# - Build verification (ensures app compiles)
+# - Testing (when tests are added)
+# - Visibility (see what's happening in GitHub)
+# ============================================================================
