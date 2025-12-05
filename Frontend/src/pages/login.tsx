@@ -1,19 +1,18 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { login } from '@/services/auth';
+import { useAuth } from '@/hooks/useAuth';
 import { loginSchema, type LoginInput } from '@/utils/validations/auth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/Card';
+import { useAuthStore } from '@/store/authStore';
 
 export default function LoginPage() {
-    const router = useRouter();
-    const [error, setError] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
+    const { login, isLoading } = useAuth(false);
+    const { error } = useAuthStore();
 
     const {
         register,
@@ -24,16 +23,10 @@ export default function LoginPage() {
     });
 
     const onSubmit = async (data: LoginInput) => {
-        setIsLoading(true);
-        setError(null);
         try {
-            const response = await login(data);
-            localStorage.setItem('token', response.token);
-            router.push('/dashboard');
-        } catch (err: any) {
-            setError(err.response?.data?.message || 'Something went wrong. Please try again.');
-        } finally {
-            setIsLoading(false);
+            await login(data);
+        } catch (err) {
+            // Error is handled by the hook and store
         }
     };
 
